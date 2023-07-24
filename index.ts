@@ -6,7 +6,7 @@ const app: Express = express();
 app.use(cors({origin: '*'}))
 app.use(express.json());
 
-const PORT = 8000
+const PORT = process.env.PORT || 8000;
 
 interface User {
   id: string;
