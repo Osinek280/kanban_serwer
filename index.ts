@@ -209,6 +209,101 @@ app.post("/edit/:kanbanId", (req: Request, res: Response) => {
   return res.status(200).json({ message: "Zadanie zostało zaktualizowane pomyślnie" });
 });
 
+app.post("/new-task/:kanbanId", (req: Request, res: Response) => {
+  const kanbanId = req.params.kanbanId;
+  const newTask: Task = { id: uuidv4(), ...req.body };
+  const file = files.find(file => file.id === kanbanId)  
+  file?.tasks.push(newTask)
+  res.status(200).json({ message: "Zadanie zostało zaktualizowane pomyślnie" });
+})
+
+app.post("/register", (req: Request, res: Response) => {
+  const { username, login, password } = req.body
+  const newUser: User = {
+    id: uuidv4(),
+    username: username,
+    login: login,
+    password
+  }
+  users.push(newUser)
+  res.status(200).json({ message: "pomyślnie zarejestrowano" })
+})
+
+app.post("/kanban/:kanbanId/new-section", (req: Request, res: Response) => {
+  const kanbanId = req.params.kanbanId;
+  const { section } = req.body
+  console.log(section)
+  const file = files.find(file => file.id === kanbanId)
+  console.log(file)
+  file?.sections.push(section)
+  res.status(200).send({ success: true, message: `dodano nową sekcje: ${section} `})
+})
+
+app.patch("/kanban/:kanbanId/edit-section", (req: Request, res: Response) => {
+  const kanbanId = req.params.kanbanId;
+  const { value, defaultValue } = req.body;
+  const file = files.find(file => file.id === kanbanId);
+  if (file) {
+    file.sections = file.sections.map((item) => {
+      if (item === defaultValue) {
+        return value;
+      }
+      return item;
+    });
+    file.tasks = file.tasks.map((task: Task) => {
+      if (task.category === defaultValue) {
+        return { ...task, category: value };
+      }
+      return task;
+    });
+  }
+});
+
+app.post("/kanban/new/:userId", (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const {kanban} = req.body;
+
+  const newKanban = {
+    id: uuidv4(),
+    name: kanban,
+    ownerId: userId,
+    sections: [],
+    tasks: []
+  }
+
+  files.push(newKanban)
+  res.status(200).send({success: true, message: `dodano nowy kanban: ${kanban}`})
+})
+
+app.delete("/kanban/:kanbanId/remove-task", (req: Request, res: Response) => {
+  const kanbanId = req.params.kanbanId;
+  const { taskId } = req.body;
+
+  const file = files.find((file) => file.id === kanbanId);
+
+  if (file) {
+    file.tasks = file.tasks.filter((el) => el.id !== taskId);
+  }
+  res.status(200).send({success: true, message: `usunięto task o id: ${taskId}`})
+});
+
+app.delete("/kanban/:kanbanId/remove-section", (req: Request, res: Response) => {
+  const kanbanId = req.params.kanbanId;
+  const { sectionIndex } = req.body;
+
+  const file = files.find((file) => file.id === kanbanId);
+
+  if(file) {
+    const updatedSection = file.sections.slice();
+    updatedSection.splice(sectionIndex, 1);
+    const updatedTask = file.tasks.filter((task) => task.category !== file.sections[sectionIndex])
+
+    file.sections = updatedSection;
+    file.tasks = updatedTask;
+  }
+  res.status(200).send({success: true, message: `usunięto section o index: ${sectionIndex}`})
+});
+
 app.get("/", (req: Request, res: Response) => {
   res.send(uuidv4())
 })
